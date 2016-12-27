@@ -11,126 +11,270 @@ using System.Text.RegularExpressions;
 namespace WikiGamesParser
 {
     class Program
-    {
-        static string pageMainLink = @"https://en.wikipedia.org/wiki/";
-        static int counter;
-        static int withoutData;
+    {      
         static List<Game> games = new List<Game>();
-       
+        static List<String> statistic = new List<String>();
         static GetData data = new GetData();
 
         [STAThread]
         static void Main(string[] args)
         {
-           string filePath = "c:\\";
-            int year=0;
-            while (year < 2004 || year > 2017)
-            {
-                Console.Write("Enter year of game: ");
-                year = Convert.ToInt32(Console.ReadLine());
-                if (year < 2004 || year > 2017)
-                    Console.Write("The year is incorrect\n");
+            int i = 0;
+            string years = ""; 
+            string pathToFolder = showFolderDialog();
+            foreach (int year in checkYears())
+            {               
+                getWikiTables(year);
+                if(i == 0)
+                {
+                    years += year;
+                }
+                else
+                    years += ", " + year;
+                i++;
             }
-            pageMainLink += year + "_in_video_gaming";
+            WriteExcel.write(games, data, pathToFolder, years);
+            showStatistic();
+            Console.Read();
+        }
+        static string showFolderDialog()
+        {
+            string outputFilePath = "c:\\";
             System.Windows.Forms.FolderBrowserDialog fbd = new System.Windows.Forms.FolderBrowserDialog();
             fbd.Description = "Select folder to save file";
             if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                filePath = fbd.SelectedPath;
+                outputFilePath = fbd.SelectedPath;
             }
-            getWikiTables();
-            WriteExcel.write(games, data, filePath);
-            Console.Read();
+            return outputFilePath;
         }
 
-        static void getWikiTables()
+        static List<Int32> checkYears()
         {
-            int countTables = 0;
-            withoutData = 0;
+            string years = "";
+            int firstYear = 0, lastYear = 0;
+            List<Int32> yearsList = new List<Int32>() { };
+            while (firstYear < 2004 || lastYear > 2017)
+            {
+                Console.Write("Enter year/years of game (e.g 2014-2016 / 2012,2015): ");
+                years = Console.ReadLine();
+                yearsList = separateYears(years);
+                firstYear = yearsList[0];
+                lastYear = yearsList[yearsList.Count - 1];
+                if (firstYear < 2004 || lastYear > 2017)
+                    Console.Write("The year/years is incorrect\n");
+            }
+            return yearsList;
+        }
 
+        static void showStatistic()
+        {
+            foreach (string line in statistic)
+                Console.WriteLine(line);
+        }
+
+        static List<Int32> separateYears(string years)
+        {
+            List<Int32> years_result = new List<Int32>();
+            if (years.Contains('-'))
+            {
+                foreach(string year in years.Split('-').ToArray())
+                {
+                    years_result.Add(Int32.Parse(new string(year.ToCharArray().Where(c => !Char.IsWhiteSpace(c)).ToArray())));
+                }
+                List<Int32> tmpYears_result = new List<Int32>();
+                years_result.Sort();
+                for (int i = years_result[0];i<= years_result[years_result.Count-1];i++)
+                {        
+                    tmpYears_result.Add(i);
+                }
+                years_result.Clear();
+                years_result = tmpYears_result;
+            }
+            else if(years.Contains(','))
+            {
+                foreach (string year in years.Split(',').ToArray())
+                {
+                    years_result.Add(Int32.Parse(new string(year.ToCharArray().Where(c => !Char.IsWhiteSpace(c)).ToArray())));
+                }
+            }
+            else if(Regex.IsMatch(years, @"^\d+$"))
+            {
+                years_result.Add(Int32.Parse(years));
+            }
+            years_result.Sort();
+            return years_result;
+        } 
+
+        static void getWikiTables(int year)
+        {
+            string pageMainLink = @"https://en.wikipedia.org/wiki/";
+            int countTables = 0;
+            int gameCount = 0;
+            pageMainLink += year + "_in_video_gaming";
             var Webget = new HtmlWeb();
-            var doc = Webget.Load(pageMainLink);
-            foreach (HtmlNode node in doc.DocumentNode.Descendants("table").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("wikitable")))
+            var htmlDoc = Webget.Load(pageMainLink);
+            foreach (HtmlNode node in htmlDoc.DocumentNode.Descendants("table").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("wikitable")))
             {
                 HtmlDocument newNode = new HtmlDocument();
                 newNode.LoadHtml(node.InnerHtml);
-
+               
                 if (countTables == 5 || countTables == 6 || countTables == 7 || countTables == 8)
                 {
                     foreach (HtmlNode gameLink in newNode.DocumentNode.SelectNodes("//tr//td//i//a").ToArray())
                     {
-                        getCurrentPageCode(gameLink.Attributes["href"].Value, gameLink.InnerText);
-                        counter++; 
+                        getCurrentPageCode(gameLink.Attributes["href"].Value, gameLink.InnerText, gameCount);
+                        gameCount++; 
                     }
                 }
-                countTables++;
-               
+                countTables++;               
             }
-            Console.WriteLine("without data: %1", withoutData);
+            statistic.Add("All games in " + year + " : " + gameCount);
         }
 
-        static void getCurrentPageCode(string gameLink, string gameName)
+        static void getCurrentPageCode(string _link, string _name, int _number)
         {
-            Game game = new Game();
-            string http = "https://en.wikipedia.org";
-            gameLink = http + gameLink;
-            game.Id = counter;
-            game.Link = gameLink;
-            game.Name = gameName;
 
-            using (WebClient client = new WebClient())
+            if (_name.Contains("Collection"))
             {
-                string html = null;
+                string http1 = "https://en.wikipedia.org";
+                _link = http1 + _link;
+                getCollectionGame(_link);
+            }
+            else
+            {
+
+                Game game = new Game();
+                string http = "https://en.wikipedia.org";
+                _link = http + _link;
+                game.Id = _number;
+                game.Link = _link;
+                game.Name = _name;
+
+
+                using (WebClient client = new WebClient())
+                {
+                    string pamePageHtml = null;
+                    try
+                    {
+                        pamePageHtml = client.DownloadString(_link);
+                        fillGameObject(pamePageHtml, game);
+                    }
+                    catch (Exception ex)
+                    { }
+                    Console.WriteLine("----------//----------");
+                }
+                Console.WriteLine(game.ToString());
+               /* if (!games.Contains(game))
+                    games.Add(game);*/
+                if(!games.Any(g => g.Name.Equals(_link)))
+                {
+                    games.Add(game);
+                }
+                    else
+                {
+                    compareGames(game);
+                }
+            }
+        }
+
+        static void compareGames(Game _game)
+        {
+            var existingGame = games.Find(item => item.Name == _game.Name);
+            if (existingGame.Genres.SequenceEqual(_game.Genres))
+            {
+                foreach (string genre in existingGame.Genres)
+                {
+                    foreach (string new_genre in _game.Genres)
+                    {
+                        if (genre.Equals(new_genre))
+                            if (!existingGame.Genres.Contains(new_genre))
+                                existingGame.Genres.Add(new_genre);
+                    }
+                }
+            }
+            else if(!existingGame.Mode.Equals(_game.Mode))
+            {
+                existingGame.Mode += ", _game.Mode";
+            }
+            else if (existingGame.Platforms.SequenceEqual(_game.Platforms))
+            {
+                foreach (string platform in existingGame.Platforms)
+                {
+                    foreach (string new_platform in _game.Platforms)
+                    {
+                        if (platform.Equals(new_platform))
+                            if (!existingGame.Platforms.Contains(new_platform))
+                                existingGame.Platforms.Add(new_platform);
+                    }
+                }
+            }
+            else if (existingGame.Release.SequenceEqual(_game.Release))
+            {
+                foreach (DateTime dateTime in existingGame.Release)
+                {
+                    foreach (DateTime new_dateTime in _game.Release)
+                    {
+                        if (dateTime.Equals(new_dateTime))
+                            if (!existingGame.Release.Contains(new_dateTime))
+                                existingGame.Release.Add(new_dateTime);
+                    }
+                }
+            }
+        }
+
+        static void getCollectionGame(string _link)
+        {
+            int gameCount = 0;
+            List<Game> listGame = new List<Game>();
+            var Webget = new HtmlWeb();
+            var htmlDoc = Webget.Load(_link);
+            foreach (HtmlNode node in htmlDoc.DocumentNode.Descendants("table").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("wikitable")))
+            {
+                HtmlDocument newNode = new HtmlDocument();
+                newNode.LoadHtml(node.InnerHtml);
                 try
                 {
-                    html = client.DownloadString(gameLink);
-                    fillGameObject(html, game);
+                    foreach (HtmlNode gameLink in newNode.DocumentNode.SelectNodes("//tr//td//i//a").ToArray())
+                    {
+                        getCurrentPageCode(gameLink.Attributes["href"].Value, gameLink.InnerText, gameCount);
+                        gameCount++;
+                    }
                 }
-                catch (Exception ex)
+                catch (ArgumentNullException ex)
                 {
+                    continue;
                 }
-                Console.WriteLine("------------");
+                
             }
-            Console.WriteLine(game.ToString());
-            games.Add(game);
         }
 
-        static void fillGameObject(string html, Game game)
+        static void fillGameObject(string pageHtml, Game game)
         {
-            HtmlDocument newNode = new HtmlDocument();
-            newNode.LoadHtml(html);
+            HtmlDocument mainNode = new HtmlDocument();
+            mainNode.LoadHtml(pageHtml);
             try
             {
-                HtmlNode tableData = newNode.DocumentNode.Descendants("table").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("infobox")).First();
+                HtmlNode tableData = mainNode.DocumentNode.Descendants("table").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("infobox")).First();
                 string parm_val = null;
-                foreach (HtmlNode parameter in tableData.SelectNodes("//tr"))
+                foreach (HtmlNode param in tableData.SelectNodes("//tr"))
                 {
-                    if (parameter.InnerText.Contains("Genre"))
+                    if (param.InnerText.Contains("Genre"))
                     {
-                        parm_val = parameter.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
+                        parm_val = param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
                         game.Genres = data.getGenres(parm_val);
                     }
-                    else if (parameter.InnerText.Contains("Developer"))
+                    else if (param.InnerText.Contains("Engine"))
                     {
-                        parm_val = parameter.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
-                        game.Developer = parm_val;
-                    }
-                    else if (parameter.InnerText.Contains("Designer"))
-                    {
-                        parm_val = parameter.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
-                        game.Designer = parm_val;
-                    }
-                    else if (parameter.InnerText.Contains("Engine"))
-                    {
-                        parm_val = parameter.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
+                        parm_val = param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
                         game.Engine = parm_val;
                         data.getEngines(parm_val);
                     }
-                    else if (parameter.InnerText.Contains("Platform"))
+                    else if (param.InnerText.Contains("Platform"))
                     {
                         int i = 0;
                         parm_val = "";
-                        foreach (var platform in parameter.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)))
+                        foreach (var platform in param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)))
                             {
                             if(i!=0)
                                 parm_val += platform + ", ";
@@ -138,13 +282,13 @@ namespace WikiGamesParser
                         }
                         game.Platforms = data.getPlatforms(parm_val);
                     }
-                    else if (parameter.InnerText.Contains("Mode"))
+                    else if (param.InnerText.Contains("Mode"))
                     {
                         if (game.Mode == null)
                         {
                             try
                             {
-                                parm_val = parameter.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
+                                parm_val = param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
                                 if (String.IsNullOrEmpty(parm_val))
                                     parm_val = "";
                                 game.Mode = parm_val;
@@ -155,17 +299,17 @@ namespace WikiGamesParser
                             }
                         }
                     }
-                    else if (parameter.InnerText.Contains("Release"))
+                    else if (param.InnerText.Contains("Release"))
                     {
                         try
                         {
                             parm_val = "";
                             int c = 0;
-                            foreach (string elem in parameter.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)))
+                            foreach (string elem in param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)))
                             {
                                 if (!elem.Contains("Release") && Regex.IsMatch(elem, "[0-9]{2}"))
                                 {
-                                    parm_val += parameter.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(c) + "|";
+                                    parm_val += param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(c) + "|";
                                 }
                                 c++;
                             }
@@ -176,36 +320,12 @@ namespace WikiGamesParser
                         }
                         game.Release = GetData.getDateReleases(parm_val);
                     }
-                    else if (parameter.InnerText.Contains("Publisher"))
-                    {
-                        parm_val = parameter.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
-                        game.Publisher = parm_val;
-                    }
-                    else if (parameter.InnerText.Contains("Artist"))
-                    {
-                        parm_val = parameter.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
-                        game.Artist = parm_val;
-                    }
                     else
-                    {
-
-                    }
+                    { }
                 }
             }
             catch (InvalidOperationException ex)
-            {
-                withoutData++;
-            }
-            int res = 0;           
-        }
-        
-        static void writeToCSV(string title, string link)
-        {
-            var forbiddenChars = @",;:".ToCharArray();
-            var csv = new StringBuilder();
-            var newLine = string.Format("{0};{1}", new string(title.Where(c => !forbiddenChars.Contains(c)).ToArray()), new string(link.Where(c => !forbiddenChars.Contains(c)).ToArray()));
-            csv.AppendLine(newLine);
-            File.AppendAllText(@"D:\testIntegration\Link.csv", csv.ToString());
+            { }        
         }
     }
 }

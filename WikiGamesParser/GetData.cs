@@ -27,7 +27,18 @@ namespace WikiGamesParser
         {
             if (_engine != null && _engine != "" && !engines.Contains(_engine))
             {
-                engines.Add(_engine);
+                string tmp_engine = "";
+                tmp_engine = _engine;
+                if (tmp_engine.Contains('('))
+                {
+                    tmp_engine = tmp_engine.Substring(0, tmp_engine.IndexOf('('));
+                }
+                else if (tmp_engine.Contains('['))
+                {
+                    tmp_engine = tmp_engine.Substring(0, tmp_engine.IndexOf('['));
+                }
+                if (!engines.Contains(tmp_engine) && !String.IsNullOrEmpty(tmp_engine))
+                    engines.Add(tmp_engine);
             }          
         }
       
@@ -40,8 +51,14 @@ namespace WikiGamesParser
                 tmp_platform = platform;
                 if (tmp_platform[0] == ' ')
                     tmp_platform = tmp_platform.Substring(1);
-                if (tmp_platform.Contains('['))
+                if (tmp_platform.Contains('('))
+                {
+                    tmp_platform = tmp_platform.Substring(0, tmp_platform.IndexOf('('));
+                }
+                else if (tmp_platform.Contains('['))
+                {
                     tmp_platform = tmp_platform.Substring(0, tmp_platform.IndexOf('['));
+                }
                 returnList.Add(tmp_platform);
                 if (!platforms.Contains(tmp_platform) && !String.IsNullOrEmpty(tmp_platform))
                     platforms.Add(tmp_platform);
@@ -58,6 +75,14 @@ namespace WikiGamesParser
                 tmp_genre = genre;
                 if (tmp_genre[0] == ' ')
                     tmp_genre = tmp_genre.Substring(1);
+                if (tmp_genre.Contains('('))
+                {
+                    tmp_genre = tmp_genre.Substring(0, tmp_genre.IndexOf('('));
+                }
+                else if(tmp_genre.Contains('['))
+                {
+                    tmp_genre = tmp_genre.Substring(0, tmp_genre.IndexOf('['));
+                }
                 returnList.Add(tmp_genre);
                 if (!genres.Contains(tmp_genre))
                     genres.Add(tmp_genre);

@@ -11,30 +11,22 @@ namespace WikiGamesParser
         public int    Id { get; set; }
         public string Name { get; set; }
         public string Link { get; set; }
-        public string Developer { get; set; }
         public List<string> Genres { get; set; }
-        public string Designer { get; set; }
         public string Engine { get; set; }
         public List<string> Platforms { get; set; }
-        public string Publisher { get; set; }
         public List<DateTime> Release { get; set; }
         public string Mode { get; set; }
-        public string Artist { get; set; }
 
         public override string ToString()
         {
-            return "Id: " +Id +"\n" + 
-                "Name: " + Name + "\n" + 
-                "Link: " + Link +"\n" + 
-                "Developer: " + Developer + "\n" + 
-                "Gener: " + getGeners() + "\n" + 
-                "Designer: " + Designer + "\n" + 
+            return "Id: " + Id + "\n" +
+                "Name: " + Name + "\n" +
+                "Link: " + Link + "\n" +
+                "Gener: " + getGeners() + "\n" +
                 "Engine: " + Engine + "\n" +
-                "Platform: " + getPlatforms() + "\n" + 
-                "Publisher: " + Publisher + "\n" + 
+                "Platform: " + getPlatforms() + "\n" +
                 "Release(s): " + getReleases() + "\n" +
-                "Mode: " + Mode + "\n" + 
-                "Artist: " + Artist + "\n";
+                "Mode: " + Mode + "\n";
         }
 
         public string getReleases(bool toConsole = true)

@@ -1,114 +1,115 @@
-﻿using Microsoft.Office.Interop.Excel;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
 
 namespace WikiGamesParser
 {
     class WriteExcel
     {
-        static Application              oXL;
-        static _Workbook                oWB;
-        static _Worksheet               oSheet;
         static List<Game>               games;
         static Dictionary<string, int>  dictPlatforms = new Dictionary<string, int>();
-        static Dictionary<string, int>  dictEngines  = new Dictionary<string, int>();
+        static Dictionary<string, int>  dictEngines = new Dictionary<string, int>();
         static Dictionary<string, int>  dictGenres = new Dictionary<string, int>();
         static int                      maxCols;
+        static ExcelWorksheet           worksheet;
+        static ExcelPackage             package;
 
-        public static void write(List<Game> _games, GetData _data, string _filePath, string year)
+        static private void init(string _path, string _year, out string _completePath)
         {
-            games = _games;
-            init();
+            string fileName = "Game list - " + _year;
+            _completePath = _path + "\\" + fileName + DateTime.Now.ToString(@"MM-dd-yyyy HH-mm") + ".xls";
+            var file    = new FileInfo(_completePath);         
+            package     = new ExcelPackage(file);
+            worksheet   = package.Workbook.Worksheets.Add(fileName);
+        }
+
+        static private void writeHeader(List<String> _engines, List<String> _platforms, List<String> _genres, string _year)
+        {
+            int i = 4;
+            worksheet.Cells[1, 1, 1, 1].Value   = _year;
+            worksheet.Cells[2, 1, 3, 1].Merge   = true;
+            worksheet.Cells[2, 1, 3, 1].Value   = "Name";
+            worksheet.Cells[2, 2, 2, 3].Merge   = true;
+            worksheet.Cells[2, 2, 2, 3].Value   = "Modes";
+            worksheet.Cells[3, 2].Value         = "Single-player";
+            worksheet.Cells[3, 3].Value         = "Multiplayer";
+
+            foreach (string platform in _platforms)
+            {
+                worksheet.Cells[3, i].Value = platform;
+                dictPlatforms.Add(platform, i);
+                i++;
+            }
+            worksheet.Cells[2, 4, 2, i - 1].Merge     = true;
+            worksheet.Cells[2, 4, 2, i - 1].Value   = "Platforms";
+            int startEnginesIndex = i;
+            foreach (string engine in _engines)
+            {
+                worksheet.Cells[3, i].Value = engine;
+                dictEngines.Add(engine, i);
+                i++;
+            }
+            worksheet.Cells[2, startEnginesIndex, 2, i - 1].Merge = true;
+            worksheet.Cells[2, startEnginesIndex, 2, i - 1].Value = "Engines";
+            int startIndexGenres = i;
+            foreach (string genre in _genres)
+            {
+                worksheet.Cells[3, i].Value = genre;
+                dictGenres.Add(genre, i);
+                i++;
+            }
+            worksheet.Cells[2, startIndexGenres, 2, i - 1].Merge = true;
+            worksheet.Cells[2, startIndexGenres, 2, i - 1].Value = "Genres";
+            worksheet.Cells[2, i, 2, i].Value = "Releases";
+            maxCols = i;
+            worksheet.Cells[2, maxCols + 1, 2, maxCols + 1].Value = "No Data";
+            maxCols += 1;
+        }
+
+        public static void open(string _path)
+        {
+            FileInfo fileOpen = new FileInfo(_path);
+            if (fileOpen.Exists)
+            {
+                System.Diagnostics.Process.Start(_path);
+            }
+            else
+            {
+                Console.WriteLine("File doesn't exist");
+            }
+        }
+
+        public static void write(List<Game> _games, GetData _data, string _filePath, string _year)
+        {
+            games               = _games;
+            string completePath = "";
+
+            init(_filePath, _year, out completePath);
+
             try
             {
-                writeHeader(_data.getListsForExcel()[0], _data.getListsForExcel()[1], _data.getListsForExcel()[2], year);
+                Console.WriteLine("Writing data...");
+                writeHeader(_data.getListsForExcel()[0], _data.getListsForExcel()[1], _data.getListsForExcel()[2], _year);
                 writeRow();
-                oXL.UserControl = true;
-                oWB.SaveAs(_filePath + "\\WikiParser_result1.xls", XlFileFormat.xlWorkbookDefault, Type.Missing, Type.Missing,
-                    false, false, XlSaveAsAccessMode.xlNoChange,
-                    Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
-                Console.WriteLine("All data saved");
+                worksheet.Column(1).AutoFit();
+                worksheet.Column(maxCols - 1).Width = 15;
+                package.Save();
+                Console.WriteLine("All data saved! - " + completePath);
+                Console.WriteLine("Do you want open this file? (y/n):");
+                string isOpenFile = Console.ReadLine();
+                if (isOpenFile.ToLower().Contains("y"))
+                {
+                    open(completePath);
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
-        }
 
-        static private void writeHeaderSimple()
-        {
-            oSheet.Cells[1, 1] = "Name";
-            oSheet.Cells[1, 2] = "Releases";
-            oSheet.Cells[1, 3] = "Platforms";
-            oSheet.Cells[1, 4] = "Engine";
-            oSheet.Cells[1, 5] = "Mode";
-            oSheet.Cells[1, 6] = "Genre";
-            oSheet.get_Range("A1", "F1").Font.Bold = true;
-        }
-
-        static private void writeHeader(List<String> engines, List<String> platforms, List<String> genres, string year)
-        {
-            int i = 4;
-            oSheet.get_Range("A1", "A1").Value = year;
-            oSheet.get_Range("A2", "A3").Merge();
-            oSheet.get_Range("A2", "A3").Interior.Color = XlRgbColor.rgbAzure;
-            oSheet.get_Range("A2", "A3").Value = "Name";
-            oSheet.get_Range("A2", "A3").Interior.Color = XlRgbColor.rgbSkyBlue;
-            oSheet.get_Range("B2", "C2").Merge();
-            oSheet.get_Range("B2", "C2").Value = "Modes";
-            oSheet.get_Range("B3", "B3").Value = "Single-player";
-            oSheet.get_Range("C3", "C3").Value = "Multiplayer";
-
-            foreach (string platform in platforms)
-            {
-                oSheet.Cells[3, i] = platform;
-                dictPlatforms.Add(platform, i);
-                i++;
-            }
-            oSheet.Range[oSheet.Cells[2, 4], oSheet.Cells[2, i-1]].Merge();
-            oSheet.Range[oSheet.Cells[2, 4], oSheet.Cells[2, i-1]] = "Platforms";
-            int startEnginesIndex = i;
-            foreach (string engine in engines)
-            {
-                oSheet.Cells[3, i] = engine;
-                dictEngines.Add(engine, i);
-                i++;
-            }
-            oSheet.Range[oSheet.Cells[2, startEnginesIndex], oSheet.Cells[2, i - 1]].Merge();
-            oSheet.Range[oSheet.Cells[2, startEnginesIndex], oSheet.Cells[2, i - 1]] = "Engines";
-            int startIndexGenres = i;
-            foreach (string genre in genres)
-            {
-                oSheet.Cells[3, i] = genre;
-                dictGenres.Add(genre, i);
-                i++;
-            }
-            oSheet.Range[oSheet.Cells[2, startIndexGenres], oSheet.Cells[2, i - 1]].Merge();
-            oSheet.Range[oSheet.Cells[2, startIndexGenres], oSheet.Cells[2, i - 1]] = "Genres";
-
-            oSheet.Range[oSheet.Cells[2, i], oSheet.Cells[2, i]] = "Releases";
-            maxCols = i;
-            oSheet.Range[oSheet.Cells[2, maxCols+1], oSheet.Cells[2, maxCols+1]] = "No Data";
-            maxCols += 1;
-        }
-
-        static private void init()
-        {
-            oXL = new Application();
-            oXL.Visible = true;
-            oWB = (_Workbook)(oXL.Workbooks.Add(""));
-            oSheet = (_Worksheet)oWB.ActiveSheet;          
-        }
-
-        static private void writeModes()
-        {
-            int i = 4;
-            foreach (var game in games)
-            {              
-                oSheet.Hyperlinks.Add(oSheet.get_Range("A" + i, "A" + i), game.Link, Type.Missing, "Click to go", game.Name);
-                oSheet.Columns.AutoFit();
-                oSheet.Rows.AutoFit();
-            }
         }
 
         static private void writeRow()
@@ -118,9 +119,10 @@ namespace WikiGamesParser
                 int i = 4;
                 foreach (var game in games)
                 {
-                   
-                     oSheet.Hyperlinks.Add(oSheet.get_Range("A" + i, "A" + i), game.Link, Type.Missing, "Click to go", game.Name);
-                     oSheet.Columns.AutoFit();
+                    worksheet.Cells[i, 1].Style.Fill.PatternType = ExcelFillStyle.None;
+                    worksheet.Cells[i, 1].Style.Font.Color.SetColor(Color.Blue);
+                    worksheet.Cells[i, 1].Hyperlink = new Uri(game.Link);
+                    worksheet.Cells[i, 1].Value     = game.Name;                  
 
                     if (game.Mode == null)
                     {
@@ -128,19 +130,18 @@ namespace WikiGamesParser
                     }
                     else if (game.Mode.Contains("ingle") && game.Mode.Contains("ulti"))
                     {
-                        oSheet.get_Range("B" + i, "B" + i).Value = "V";                   
-                        oSheet.get_Range("C" + i, "C" + i).Value = "V";                     
+                        worksheet.Cells[i, 2].Value = "V";
+                        worksheet.Cells[i, 3].Value = "V";
                     }
                     else if (game.Mode.Contains("ingle") || game.Mode.Contains("1"))
                     {
-                        oSheet.get_Range("B" + i, "B" + i).Value = "V";
+                        worksheet.Cells[i, 2].Value = "V";
                     }
                     else if (game.Mode.Contains("ulti"))
                     {
-                        oSheet.get_Range("C" + i, "C" + i).Value = "V";
+                        worksheet.Cells[i, 3].Value = "V";
                     }
-                    else
-                    { }
+                    else { }
 
                     if (game.Platforms != null)
                     {
@@ -148,75 +149,44 @@ namespace WikiGamesParser
                         {
                             if (dictPlatforms.ContainsKey(platform))
                             {
-                                oSheet.Cells[i, dictPlatforms[platform]] = "V";
+                                worksheet.Cells[i, dictPlatforms[platform]].Value = "V";
                             }
                         }
                     }
 
                     if (game.Engine != null)
-                    {                        
-                            if (dictEngines.ContainsKey(game.Engine))
-                            {
-                                oSheet.Cells[i, dictEngines[game.Engine]] = "V";
-                            }                       
-                    }
-
-                if (game.Genres != null)
-                {
-                    foreach (string genres in game.Genres)
                     {
-                        if (dictGenres.ContainsKey(genres))
+                        if (dictEngines.ContainsKey(game.Engine))
                         {
-                            oSheet.Cells[i, dictGenres[genres]] = "V";
+                            worksheet.Cells[i, dictEngines[game.Engine]].Value = "V";                        
                         }
                     }
-                }
-                else
-                {
-                    oSheet.Cells[i, maxCols] = "V";
-                    oSheet.Range[oSheet.Cells[i, 1], oSheet.Cells[i, maxCols]].Interior.Color = XlRgbColor.rgbRed;
-                }
-                oSheet.Cells[i,maxCols-1] = game.getReleases(false);
-                i++; 
+
+                    if (game.Genres != null)
+                    {
+                        foreach (string genres in game.Genres)
+                        {
+                            if (dictGenres.ContainsKey(genres))
+                            {
+                                worksheet.Cells[i, dictGenres[genres]].Value = "V";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        worksheet.Cells[i,2,i, maxCols].Style.Fill.PatternType = ExcelFillStyle.MediumGray;
+                        worksheet.Cells[i, 2, i, maxCols].Style.Fill.BackgroundColor.SetColor(Color.Red);
+                        worksheet.Cells[i, maxCols].Value = "V";                      
+                    }
+                    worksheet.Cells[i, maxCols - 1].Style.WrapText  = true;
+                    worksheet.Cells[i, maxCols - 1].Value           = game.getReleases(false);                
+                    i++;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
         }
-
-        static private void writeRowDel()
-        {
-            int i = 3;
-            foreach(var game in games)
-            {
-                oSheet.Columns[2].ColumnWidth = 10;
-                oSheet.Hyperlinks.Add(oSheet.get_Range("A"+i, "A"+i), game.Link, Type.Missing, "Click to go", game.Name);
-                oSheet.Columns.AutoFit();
-                oSheet.Rows.AutoFit();
-                oSheet.get_Range("B"+i, "B"+i).Value = game.getReleases(false);
-                oSheet.Columns[2].ColumnWidth = 10;
-                oSheet.Rows.AutoFit();
-                oSheet.get_Range("C" + i, "C" + i).Value = game.getPlatforms(false);
-                oSheet.Columns.AutoFit();
-                oSheet.Rows.AutoFit();
-                oSheet.get_Range("D" + i, "D" + i).Value = game.Engine;
-                oSheet.Columns.AutoFit();
-                oSheet.Rows.AutoFit();
-                oSheet.get_Range("E" + i, "E" + i).Value = game.Mode;
-                oSheet.Columns.AutoFit();
-                oSheet.Rows.AutoFit();
-                oSheet.get_Range("F" + i, "F" + i).Value = game.getGeners(false);
-                oSheet.Columns.AutoFit();
-                oSheet.Rows.AutoFit();
-                i++;
-            }
-           
-
-
-
-        }
-
     }
 }

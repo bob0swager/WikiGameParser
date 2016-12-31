@@ -8,14 +8,14 @@ namespace WikiGamesParser
 {
     class Game
     {
-        public int    Id { get; set; }
-        public string Name { get; set; }
-        public string Link { get; set; }
+        public int          Id { get; set; }
+        public string       Name { get; set; }
+        public string       Link { get; set; }
         public List<string> Genres { get; set; }
-        public string Engine { get; set; }
+        public string       Engine { get; set; }
         public List<string> Platforms { get; set; }
         public List<DateTime> Release { get; set; }
-        public string Mode { get; set; }
+        public string       Mode { get; set; }
 
         public override string ToString()
         {
@@ -31,9 +31,10 @@ namespace WikiGamesParser
 
         public string getReleases(bool toConsole = true)
         {
-            string result = "";
-            string newLine = "\n";
-            int i = 0;
+            string  result   = "";
+            string  newLine  = "\n";
+            int     i        = 0;
+
             if (Release == null)
                 return "";
             else
@@ -61,9 +62,9 @@ namespace WikiGamesParser
      
         public string getGeners(bool toConsole = true)
         {
-            string result = "";
-            string newLine = "\n";
-            int i = 0;
+            string  result   = "";
+            string  newLine  = "\n";
+            int     i        = 0;
             if (Genres == null)
                 return "";
             else
@@ -89,9 +90,9 @@ namespace WikiGamesParser
         }
         public string getPlatforms(bool toConsole = true)
         {
-            string result = "";
-            string newLine = "\n";
-            int i = 0;
+            string  result  = "";
+            string  newLine = "\n";
+            int     i       = 0;
             if (Platforms == null)
                 return "";
             else

@@ -108,17 +108,17 @@ namespace WikiGamesParser
                 { "dec", 12},
             };
 
-            List<DateTime> releases = new List<DateTime>();
-            Regex rgx = new Regex("[^0-9]");
-            Regex rgx_number = new Regex("[^0-9]");
-            string[] template1 = new String[5];
+            List<DateTime>  releases    = new List<DateTime>();
+            Regex           rgx         = new Regex("[^0-9]");
+            string[]        templateDate = new String[5];
+
             foreach (string date in _dates.Split('|'))
             {
-                DateTime date_w = new DateTime();
-                string temp_date = "";
-                int month = 1;
-                int day = 1;
-                int year = 1;
+                DateTime    date_w      = new DateTime();
+                string      temp_date   = "";
+                int         month       = 1;
+                int         day         = 1;
+                int         year        = 1;
                 temp_date = date;
                 if (date.Contains(':'))
                 {
@@ -132,75 +132,67 @@ namespace WikiGamesParser
                 if (Regex.IsMatch(temp_date, "[0-9]{4}-[0-9]{2}-[0-9]{2}"))
                 {
                     string[] template = temp_date.Substring((temp_date.Length - 11)).Split('-');
-
                     date_w = new DateTime(Int32.Parse(template[0]), Int32.Parse(template[1]), Int32.Parse(rgx.Replace(template[2], "")));
-                    int j = 0;
                 }
                 else if (Regex.IsMatch(temp_date, "[0-9]{1,} [a-zA-Z]{3,} [0-9]{4}"))
                 {
-                    template1 = temp_date.Split(' ');
-                    if (months.ContainsKey(template1[1].Substring(0, 3).Replace(" ", string.Empty).ToLower()))
+                    templateDate = temp_date.Split(' ');
+                    if (months.ContainsKey(templateDate[1].Substring(0, 3).Replace(" ", string.Empty).ToLower()))
                     {
-                        month = months[template1[1].Substring(0, 3).ToLower()];
+                        month = months[templateDate[1].Substring(0, 3).ToLower()];
                     }
-                    date_w = new DateTime(Int32.Parse(template1[2].Substring(0, 4)), month, Int32.Parse(template1[0]));
-                    int df = 0;
+                    date_w = new DateTime(Int32.Parse(templateDate[2].Substring(0, 4)), month, Int32.Parse(templateDate[0]));
                 }
                 else if (Regex.IsMatch(temp_date, "[0-9]{1,} [a-zA-Z]{3,}, [0-9]{4}"))
                 {
-                    template1 = temp_date.Split(' ');
-                    if (months.ContainsKey(template1[1].Substring(0, 3).Replace(" ", string.Empty).ToLower()))
+                    templateDate = temp_date.Split(' ');
+                    if (months.ContainsKey(templateDate[1].Substring(0, 3).Replace(" ", string.Empty).ToLower()))
                     {
-                        month = months[template1[1].Substring(0, 3).ToLower()];
+                        month = months[templateDate[1].Substring(0, 3).ToLower()];
                     }
-                    date_w = new DateTime(Int32.Parse(template1[2]), month, Int32.Parse(template1[0]));
+                    date_w = new DateTime(Int32.Parse(templateDate[2]), month, Int32.Parse(templateDate[0]));
                 }
                 else if (Regex.IsMatch(temp_date, "[a-zA-Z]{3,} [0-9]{1,}, [0-9]{4}"))
                 {
-                    template1 = temp_date.Split(' ');
-                    if (months.ContainsKey(template1[0].Substring(0, 3).Replace(" ", string.Empty).ToLower()))
+                    templateDate = temp_date.Split(' ');
+                    if (months.ContainsKey(templateDate[0].Substring(0, 3).Replace(" ", string.Empty).ToLower()))
                     {
-                        month = months[template1[0].Substring(0, 3).ToLower()];
+                        month = months[templateDate[0].Substring(0, 3).ToLower()];
                     }
-                    if (template1.Length >= 2)
+                    if (templateDate.Length >= 2)
                     {
-                        day = Int32.Parse(rgx.Replace(template1[1], ""));
-                        year = Int32.Parse(template1[2].Substring(0, 4));
+                        day = Int32.Parse(rgx.Replace(templateDate[1], ""));
+                        year = Int32.Parse(templateDate[2].Substring(0, 4));
                     }
                     date_w = new DateTime(year, month, day);
                 }
                 else if (Regex.IsMatch(temp_date, "[a-zA-Z]{3,} [0-9]{4}"))
                 {
-                    template1 = temp_date.Split(' ');
-                    if (months.ContainsKey(template1[0].Substring(0, 3).Replace(" ", string.Empty).ToLower()))
+                    templateDate = temp_date.Split(' ');
+                    if (months.ContainsKey(templateDate[0].Substring(0, 3).Replace(" ", string.Empty).ToLower()))
                     {
-                        month = months[template1[0].Substring(0, 3).ToLower()];
+                        month = months[templateDate[0].Substring(0, 3).ToLower()];
                     }
-                    if (template1.Length >= 2)
-                        year = Int32.Parse(template1[1]);
+                    if (templateDate.Length >= 2)
+                        year = Int32.Parse(templateDate[1]);
                     date_w = new DateTime(year, month, day);
                 }
                 else if (Regex.IsMatch(temp_date, "[a-zA-Z]{1}[1-4]{1} [0-9]{4}"))
                 {
-                    template1 = temp_date.Split(' ');
-                    switch (template1[0][1])
+                    templateDate = temp_date.Split(' ');
+                    switch (templateDate[0][1])
                     {
                         case '1': month = 1; break;
                         case '2': month = 4; break;
                         case '3': month = 7; break;
                         case '4': month = 10; break;
                     };
-                    year = Int32.Parse(template1[1].Substring(0, 4));
-                    date_w = new DateTime(year, month, day);
+                    year    = Int32.Parse(templateDate[1].Substring(0, 4));
+                    date_w  = new DateTime(year, month, day);
                 }
                 else if (Regex.IsMatch(temp_date, "[0-9]{4}"))
                 {
                     date_w = new DateTime(Int32.Parse(temp_date), month, day);
-                    int df = 0;
-                }
-                else if (temp_date != "" && !temp_date.Contains("36"))
-                {
-                    int g = 0;
                 }
 
                 if (date_w > new DateTime(1, 1, 1))

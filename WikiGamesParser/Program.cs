@@ -1,69 +1,75 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net;
 using HtmlAgilityPack;
-using System.IO;
 using System.Text.RegularExpressions;
 
 namespace WikiGamesParser
 {
     class Program
     {      
-        static List<Game> games = new List<Game>();
-        static List<String> statistic = new List<String>();
-        static GetData data = new GetData();
+        static List<Game>   games       = new List<Game>();
+        static List<String> statistic   = new List<String>();
+        static GetData      data        = new GetData();
 
         [STAThread]
         static void Main(string[] args)
         {
-            int i = 0;
-            string years = ""; 
-            string pathToFolder = showFolderDialog();
-            foreach (int year in checkYears())
-            {               
-                getWikiTables(year);
-                if(i == 0)
-                {
-                    years += year;
-                }
-                else
-                    years += ", " + year;
-                i++;
-            }
-            WriteExcel.write(games, data, pathToFolder, years);
-            showStatistic();
-            Console.Read();
+              int    i              = 0;
+              string years          = ""; 
+              string pathToFolder   = showFolderDialog();
+              foreach (int year in checkYears())
+              {               
+                  getWikiTables(year);
+                  if(i == 0)
+                  {
+                      years += year;
+                  }
+                  else
+                      years += ", " + year;
+                  i++;
+              }
+              showStatistic();
+              WriteExcel.write(games, data, pathToFolder, years);
+              Console.Read();          
         }
+
         static string showFolderDialog()
         {
             string outputFilePath = "c:\\";
-            System.Windows.Forms.FolderBrowserDialog fbd = new System.Windows.Forms.FolderBrowserDialog();
-            fbd.Description = "Select folder to save file";
-            if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            System.Windows.Forms.FolderBrowserDialog targetFolder = new System.Windows.Forms.FolderBrowserDialog();
+            targetFolder.Description = "Select folder to save file";
+            if (targetFolder.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                outputFilePath = fbd.SelectedPath;
+                outputFilePath = targetFolder.SelectedPath;
             }
             return outputFilePath;
         }
 
         static List<Int32> checkYears()
         {
-            string years = "";
-            int firstYear = 0, lastYear = 0;
+            string  years       = "";
+            int     firstYear   = 0,  
+                    lastYear    = 0;
             List<Int32> yearsList = new List<Int32>() { };
             while (firstYear < 2004 || lastYear > 2017)
             {
-                Console.Write("Enter year/years of game (e.g 2014-2016 / 2012,2015): ");
-                years = Console.ReadLine();
-                yearsList = separateYears(years);
-                firstYear = yearsList[0];
-                lastYear = yearsList[yearsList.Count - 1];
-                if (firstYear < 2004 || lastYear > 2017)
+                try
+                {
+                    Console.Write("Enter year/years of game (e.g 2014-2016 / 2012,2015): ");
+                    years = Console.ReadLine();
+                    yearsList = separateYears(years);
+                    firstYear = yearsList[0];
+                    lastYear = yearsList[yearsList.Count - 1];
+                    if (firstYear < 2004 || lastYear > 2017)
+                        Console.Write("The year/years is incorrect\n");
+                }
+                catch (Exception)
+                {
                     Console.Write("The year/years is incorrect\n");
-            }
+                }
+            }             
             return yearsList;
         }
 
@@ -84,7 +90,7 @@ namespace WikiGamesParser
                 }
                 List<Int32> tmpYears_result = new List<Int32>();
                 years_result.Sort();
-                for (int i = years_result[0];i<= years_result[years_result.Count-1];i++)
+                for (int i = years_result[0];i <= years_result[years_result.Count-1];i++)
                 {        
                     tmpYears_result.Add(i);
                 }
@@ -106,51 +112,51 @@ namespace WikiGamesParser
             return years_result;
         } 
 
-        static void getWikiTables(int year)
+        static void getWikiTables(int _year)
         {
-            string pageMainLink = @"https://en.wikipedia.org/wiki/";
-            int countTables = 0;
-            int gameCount = 0;
-            pageMainLink += year + "_in_video_gaming";
-            var Webget = new HtmlWeb();
+            string  pageMainLink    = @"https://en.wikipedia.org/wiki/";
+            int     countTables     = 0;
+            int     gameCount       = 0;
+
+            pageMainLink += _year + "_in_video_gaming";
+            var Webget  = new HtmlWeb();
             var htmlDoc = Webget.Load(pageMainLink);
             foreach (HtmlNode node in htmlDoc.DocumentNode.Descendants("table").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("wikitable")))
             {
                 HtmlDocument newNode = new HtmlDocument();
-                newNode.LoadHtml(node.InnerHtml);
-               
+                newNode.LoadHtml(node.InnerHtml);          
                 if (countTables == 5 || countTables == 6 || countTables == 7 || countTables == 8)
                 {
-                    foreach (HtmlNode gameLink in newNode.DocumentNode.SelectNodes("//tr//td//i//a").ToArray())
+                    if (newNode.DocumentNode.SelectSingleNode("//tr//td//i//a") != null)
                     {
-                        getCurrentPageCode(gameLink.Attributes["href"].Value, gameLink.InnerText, gameCount);
-                        gameCount++; 
+                        foreach (HtmlNode gameLink in newNode.DocumentNode.SelectNodes("//tr//td//i//a").ToArray())
+                        {
+                            getCurrentPageCode(gameLink.Attributes["href"].Value, gameLink.InnerText, gameCount);
+                            gameCount++;
+                        }
                     }
                 }
                 countTables++;               
             }
-            statistic.Add("All games in " + year + " : " + gameCount);
+            statistic.Add("All games in " + _year + " : " + gameCount);
         }
 
         static void getCurrentPageCode(string _link, string _name, int _number)
         {
-
             if (_name.Contains("Collection"))
             {
-                string http1 = "https://en.wikipedia.org";
-                _link = http1 + _link;
+                string http1    = "https://en.wikipedia.org";
+                _link           = http1 + _link;
                 getCollectionGame(_link);
             }
             else
             {
-
-                Game game = new Game();
+                Game game   = new Game();
                 string http = "https://en.wikipedia.org";
-                _link = http + _link;
-                game.Id = _number;
-                game.Link = _link;
-                game.Name = _name;
-
+                _link       = http + _link;
+                game.Id     = _number;
+                game.Link   = _link;
+                game.Name   = _name;
 
                 using (WebClient client = new WebClient())
                 {
@@ -160,13 +166,10 @@ namespace WikiGamesParser
                         pamePageHtml = client.DownloadString(_link);
                         fillGameObject(pamePageHtml, game);
                     }
-                    catch (Exception ex)
-                    { }
+                    catch (Exception) { }
                     Console.WriteLine("----------//----------");
                 }
                 Console.WriteLine(game.ToString());
-               /* if (!games.Contains(game))
-                    games.Add(game);*/
                 if(!games.Any(g => g.Name.Equals(_link)))
                 {
                     games.Add(game);
@@ -241,33 +244,33 @@ namespace WikiGamesParser
                         gameCount++;
                     }
                 }
-                catch (ArgumentNullException ex)
+                catch (ArgumentNullException)
                 {
                     continue;
-                }
-                
+                }               
             }
         }
 
-        static void fillGameObject(string pageHtml, Game game)
+        static void fillGameObject(string _pageHtml, Game _game)
         {
             HtmlDocument mainNode = new HtmlDocument();
-            mainNode.LoadHtml(pageHtml);
+            mainNode.LoadHtml(_pageHtml);
             try
             {
-                HtmlNode tableData = mainNode.DocumentNode.Descendants("table").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("infobox")).First();
-                string parm_val = null;
+                HtmlNode    tableData = mainNode.DocumentNode.Descendants("table").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("infobox")).First();
+                string      parm_val    = null;
+
                 foreach (HtmlNode param in tableData.SelectNodes("//tr"))
                 {
                     if (param.InnerText.Contains("Genre"))
                     {
                         parm_val = param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
-                        game.Genres = data.getGenres(parm_val);
+                        _game.Genres = data.getGenres(parm_val);
                     }
                     else if (param.InnerText.Contains("Engine"))
                     {
                         parm_val = param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
-                        game.Engine = parm_val;
+                        _game.Engine = parm_val;
                         data.getEngines(parm_val);
                     }
                     else if (param.InnerText.Contains("Platform"))
@@ -280,20 +283,20 @@ namespace WikiGamesParser
                                 parm_val += platform + ", ";
                             i++;
                         }
-                        game.Platforms = data.getPlatforms(parm_val);
+                        _game.Platforms = data.getPlatforms(parm_val);
                     }
                     else if (param.InnerText.Contains("Mode"))
                     {
-                        if (game.Mode == null)
+                        if (_game.Mode == null)
                         {
                             try
                             {
                                 parm_val = param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
                                 if (String.IsNullOrEmpty(parm_val))
                                     parm_val = "";
-                                game.Mode = parm_val;
+                                _game.Mode = parm_val;
                             }
-                            catch (ArgumentOutOfRangeException ex)
+                            catch (ArgumentOutOfRangeException)
                             {
                                 continue;
                             }
@@ -314,18 +317,16 @@ namespace WikiGamesParser
                                 c++;
                             }
                         }
-                        catch (ArgumentOutOfRangeException ex)
+                        catch (ArgumentOutOfRangeException)
                         {
                             continue;
                         }
-                        game.Release = GetData.getDateReleases(parm_val);
+                        _game.Release = GetData.getDateReleases(parm_val);
                     }
-                    else
-                    { }
+                    else { }
                 }
             }
-            catch (InvalidOperationException ex)
-            { }        
+            catch (InvalidOperationException){ }        
         }
     }
 }

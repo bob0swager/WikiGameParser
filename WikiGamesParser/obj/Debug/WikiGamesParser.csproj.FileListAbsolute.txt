@@ -4,10 +4,9 @@ c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParse
 c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParser\bin\Debug\HtmlAgilityPack.dll
 c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParser\bin\Debug\HtmlAgilityPack.pdb
 c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParser\bin\Debug\HtmlAgilityPack.xml
-c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParser\obj\Debug\WikiGamesParser.csprojResolveAssemblyReference.cache
 c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParser\obj\Debug\WikiGamesParser.exe
 c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParser\obj\Debug\WikiGamesParser.pdb
 c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParser\obj\Debug\Interop.UCAddinLib.dll
 c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParser\obj\Debug\WikiGamesParser.csproj.ResolveComReference.cache
-c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParser\bin\Debug\Microsoft.Office.Client.Education.dll
-c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParser\bin\Debug\Microsoft.SharePoint.Client.Runtime.dll
+C:\Users\PC\Documents\Visual Studio 2015\Projects\WikiGamesParser\WikiGamesParser\bin\Debug\EPPlus.dll
+C:\Users\PC\Documents\Visual Studio 2015\Projects\WikiGamesParser\WikiGamesParser\bin\Debug\EPPlus.xml

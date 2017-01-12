@@ -12,6 +12,7 @@ namespace WikiGamesParser
         static List<Game>   games       = new List<Game>();
         static List<String> statistic   = new List<String>();
         static GetData      data        = new GetData();
+        static int          gameCount   = 0;
 
         [STAThread]
         static void Main(string[] args)
@@ -120,7 +121,7 @@ namespace WikiGamesParser
         {
             string  pageMainLink    = @"https://en.wikipedia.org/wiki/";
             int     countTables     = 0;
-            int     gameCount       = 0;
+            
 
             pageMainLink += _year + "_in_video_gaming";
             var Webget  = new HtmlWeb();
@@ -136,7 +137,7 @@ namespace WikiGamesParser
                         foreach (HtmlNode gameLink in newNode.DocumentNode.SelectNodes("//tr//td//i//a").ToArray())
                         {
                             getCurrentPageCode(gameLink.Attributes["href"].Value, gameLink.InnerText, gameCount);
-                            gameCount++;
+                            
                         }
                     }
                 }
@@ -157,6 +158,7 @@ namespace WikiGamesParser
             }
             else
             {
+               
                 Game game = new Game();
                 game.Id = _number;
                 game.Link = _link;
@@ -177,6 +179,7 @@ namespace WikiGamesParser
                 if (!games.Any(g => g.Name.Equals(_name)))
                 {
                     games.Add(game);
+                    gameCount++;
                 }
                 else
                 {
@@ -248,7 +251,6 @@ namespace WikiGamesParser
 
         static void getCollectionGame(string _link)
         {
-            int gameCount = 0;
             List<Game> listGame = new List<Game>();
             var Webget = new HtmlWeb();
             var htmlDoc = Webget.Load(_link);
@@ -261,7 +263,7 @@ namespace WikiGamesParser
                     foreach (HtmlNode gameLink in newNode.DocumentNode.SelectNodes("//tr//td//i//a").ToArray())
                     {
                         getCurrentPageCode(gameLink.Attributes["href"].Value, gameLink.InnerText, gameCount);
-                        gameCount++;
+                       
                     }
                 }
                 catch (ArgumentNullException)

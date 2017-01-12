@@ -192,7 +192,7 @@ namespace WikiGamesParser
                 }
                 else if (Regex.IsMatch(temp_date, "[0-9]{4}"))
                 {
-                    date_w = new DateTime(Int32.Parse(temp_date), month, day);
+                    date_w = new DateTime(Int32.Parse(temp_date.Split(' ').ToArray()[0].Substring(0,4)), month, day);
                 }
 
                 if (date_w > new DateTime(1, 1, 1))

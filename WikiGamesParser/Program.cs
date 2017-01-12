@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 namespace WikiGamesParser
 {
     class Program
-    {      
+    {     
         static List<Game>   games       = new List<Game>();
         static List<String> statistic   = new List<String>();
         static GetData      data        = new GetData();
@@ -16,23 +16,27 @@ namespace WikiGamesParser
         [STAThread]
         static void Main(string[] args)
         {
-              int    i              = 0;
-              string years          = ""; 
-              string pathToFolder   = showFolderDialog();
-              foreach (int year in checkYears())
-              {               
-                  getWikiTables(year);
-                  if(i == 0)
-                  {
-                      years += year;
-                  }
-                  else
-                      years += ", " + year;
-                  i++;
-              }
-              showStatistic();
-              WriteExcel.write(games, data, pathToFolder, years);
-              Console.Read();          
+            int i = 0;
+            string years = "";
+            string pathToFolder = showFolderDialog();
+            foreach (int year in checkYears())
+            {
+                getWikiTables(year);
+                if (i == 0)
+                {
+                    years += year;
+                }
+                else
+                    years += ", " + year;
+                i++;
+            }
+            showStatistic();
+            var sortedListGames = from game in games
+                                  orderby game.Name ascending
+                                  select game;
+            WriteExcel.write(sortedListGames.ToList(), data, pathToFolder, years);
+            Console.Read();
+
         }
 
         static string showFolderDialog()
@@ -69,7 +73,7 @@ namespace WikiGamesParser
                 {
                     Console.Write("The year/years is incorrect\n");
                 }
-            }             
+            }
             return yearsList;
         }
 
@@ -84,33 +88,33 @@ namespace WikiGamesParser
             List<Int32> years_result = new List<Int32>();
             if (years.Contains('-'))
             {
-                foreach(string year in years.Split('-').ToArray())
+                foreach (string year in years.Split('-').ToArray())
                 {
                     years_result.Add(Int32.Parse(new string(year.ToCharArray().Where(c => !Char.IsWhiteSpace(c)).ToArray())));
                 }
                 List<Int32> tmpYears_result = new List<Int32>();
                 years_result.Sort();
-                for (int i = years_result[0];i <= years_result[years_result.Count-1];i++)
-                {        
+                for (int i = years_result[0]; i <= years_result[years_result.Count - 1]; i++)
+                {
                     tmpYears_result.Add(i);
                 }
                 years_result.Clear();
                 years_result = tmpYears_result;
             }
-            else if(years.Contains(','))
+            else if (years.Contains(','))
             {
                 foreach (string year in years.Split(',').ToArray())
                 {
                     years_result.Add(Int32.Parse(new string(year.ToCharArray().Where(c => !Char.IsWhiteSpace(c)).ToArray())));
                 }
             }
-            else if(Regex.IsMatch(years, @"^\d+$"))
+            else if (Regex.IsMatch(years, @"^\d+$"))
             {
                 years_result.Add(Int32.Parse(years));
             }
             years_result.Sort();
             return years_result;
-        } 
+        }
 
         static void getWikiTables(int _year)
         {
@@ -136,27 +140,27 @@ namespace WikiGamesParser
                         }
                     }
                 }
-                countTables++;               
+                countTables++;
             }
             statistic.Add("All games in " + _year + " : " + gameCount);
         }
 
         static void getCurrentPageCode(string _link, string _name, int _number)
         {
-            if (_name.Contains("Collection"))
+            string http = "https://en.wikipedia.org";
+            if (!_link.Contains("http"))
+                _link = http + _link;
+
+            if (_name.Contains("Collection") || !linkEqualName(_link, _name))
             {
-                string http1    = "https://en.wikipedia.org";
-                _link           = http1 + _link;
                 getCollectionGame(_link);
             }
             else
             {
-                Game game   = new Game();
-                string http = "https://en.wikipedia.org";
-                _link       = http + _link;
-                game.Id     = _number;
-                game.Link   = _link;
-                game.Name   = _name;
+                Game game = new Game();
+                game.Id = _number;
+                game.Link = _link;
+                game.Name = _name;
 
                 using (WebClient client = new WebClient())
                 {
@@ -170,21 +174,37 @@ namespace WikiGamesParser
                     Console.WriteLine("----------//----------");
                 }
                 Console.WriteLine(game.ToString());
-                if(!games.Any(g => g.Name.Equals(_link)))
+                if (!games.Any(g => g.Name.Equals(_name)))
                 {
                     games.Add(game);
                 }
-                    else
+                else
                 {
                     compareGames(game);
                 }
+
             }
+        }
+
+        static bool linkEqualName(string _link, string _name)
+        {
+            bool res = false;
+            foreach (var word in _name.Split(' '))
+            {
+                if (_link.ToLower().Contains(word.ToLower()))
+                {
+                    res = true;
+                    break;
+                }
+            }
+            return res;
         }
 
         static void compareGames(Game _game)
         {
             var existingGame = games.Find(item => item.Name == _game.Name);
-            if (existingGame.Genres.SequenceEqual(_game.Genres))
+
+            if (_game.Genres != null)
             {
                 foreach (string genre in existingGame.Genres)
                 {
@@ -196,11 +216,11 @@ namespace WikiGamesParser
                     }
                 }
             }
-            else if(!existingGame.Mode.Equals(_game.Mode))
+            else if (_game.Mode != null)
             {
-                existingGame.Mode += ", _game.Mode";
+                existingGame.Mode += ", " + _game.Mode;
             }
-            else if (existingGame.Platforms.SequenceEqual(_game.Platforms))
+            else if (_game.Platforms != null)
             {
                 foreach (string platform in existingGame.Platforms)
                 {
@@ -212,7 +232,7 @@ namespace WikiGamesParser
                     }
                 }
             }
-            else if (existingGame.Release.SequenceEqual(_game.Release))
+            else if (_game.Release != null)
             {
                 foreach (DateTime dateTime in existingGame.Release)
                 {
@@ -247,7 +267,7 @@ namespace WikiGamesParser
                 catch (ArgumentNullException)
                 {
                     continue;
-                }               
+                }
             }
         }
 
@@ -257,9 +277,9 @@ namespace WikiGamesParser
             mainNode.LoadHtml(_pageHtml);
             try
             {
-                HtmlNode    tableData = mainNode.DocumentNode.Descendants("table").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("infobox")).First();
-                string      parm_val    = null;
-
+                HtmlNode tableData = mainNode.DocumentNode.Descendants("table").Where(d => d.Attributes.Contains("class") && d.Attributes["class"].Value.Contains("infobox")).First();
+                string parm_val = null;
+                int p = 0;
                 foreach (HtmlNode param in tableData.SelectNodes("//tr"))
                 {
                     if (param.InnerText.Contains("Genre"))
@@ -267,39 +287,26 @@ namespace WikiGamesParser
                         parm_val = param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
                         _game.Genres = data.getGenres(parm_val);
                     }
-                    else if (param.InnerText.Contains("Engine"))
-                    {
-                        parm_val = param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
-                        _game.Engine = parm_val;
-                        data.getEngines(parm_val);
-                    }
                     else if (param.InnerText.Contains("Platform"))
                     {
-                        int i = 0;
-                        parm_val = "";
-                        foreach (var platform in param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)))
-                            {
-                            if(i!=0)
-                                parm_val += platform + ", ";
-                            i++;
-                        }
-                        _game.Platforms = data.getPlatforms(parm_val);
-                    }
-                    else if (param.InnerText.Contains("Mode"))
-                    {
-                        if (_game.Mode == null)
+                        if (p == 0)
                         {
-                            try
+                            int i = 0;
+                            parm_val = "";
+                            // foreach (var platform in param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)))
+                            HtmlNodeCollection node = param.SelectNodes("td//ul//li//a");
+                            if (node == null)
                             {
-                                parm_val = param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
-                                if (String.IsNullOrEmpty(parm_val))
-                                    parm_val = "";
-                                _game.Mode = parm_val;
+                                node = param.SelectNodes("td//a"); ;
                             }
-                            catch (ArgumentOutOfRangeException)
+                            foreach (var platform in node)
                             {
-                                continue;
+                                // if(i!=0)
+                                parm_val += platform.InnerText + ", ";
+                                i++;
                             }
+                            _game.Platforms = data.getPlatforms(parm_val);
+                            p++;
                         }
                     }
                     else if (param.InnerText.Contains("Release"))
@@ -323,10 +330,37 @@ namespace WikiGamesParser
                         }
                         _game.Release = GetData.getDateReleases(parm_val);
                     }
+                    else if (param.InnerText.Contains("Engine"))
+                    {
+                        if (param.InnerText.Split(' ').ToArray()[0].Contains("Engine"))
+                        {
+                            parm_val = param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
+                            _game.Engine = parm_val;
+                            data.getEngines(parm_val);
+                        }
+                        //else continue;
+                    }
+                    else if (param.InnerText.Contains("Mode"))
+                    {
+                        if (_game.Mode == null)
+                        {
+                            try
+                            {
+                                parm_val = param.InnerText.Split('\n').Where(a => !string.IsNullOrEmpty(a)).ElementAt(1);
+                                if (String.IsNullOrEmpty(parm_val))
+                                    parm_val = "";
+                                _game.Mode = parm_val;
+                            }
+                            catch (ArgumentOutOfRangeException)
+                            {
+                                continue;
+                            }
+                        }
+                    }
                     else { }
                 }
             }
-            catch (InvalidOperationException){ }        
+            catch (InvalidOperationException) { }
         }
     }
 }

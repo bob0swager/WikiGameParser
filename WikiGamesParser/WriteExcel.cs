@@ -20,7 +20,7 @@ namespace WikiGamesParser
         static private void init(string _path, string _year, out string _completePath)
         {
             string fileName = "Game list - " + _year;
-            _completePath = _path + "\\" + fileName + DateTime.Now.ToString(@"MM-dd-yyyy HH-mm") + ".xls";
+            _completePath = _path + "\\" + fileName + DateTime.Now.ToString(@" MM-dd-yyyy HH-mm") + ".xls";
             var file    = new FileInfo(_completePath);         
             package     = new ExcelPackage(file);
             worksheet   = package.Workbook.Worksheets.Add(fileName);
@@ -117,6 +117,7 @@ namespace WikiGamesParser
             try
             {
                 int i = 4;
+
                 foreach (var game in games)
                 {
                     worksheet.Cells[i, 1].Style.Fill.PatternType = ExcelFillStyle.None;
@@ -172,8 +173,8 @@ namespace WikiGamesParser
                             }
                         }
                     }
-                    else
-                    {
+                    if(game.Platforms == null && game.Engine == null && game.Genres == null && game.Release == null && game.Mode == "")
+                    { 
                         worksheet.Cells[i,2,i, maxCols].Style.Fill.PatternType = ExcelFillStyle.MediumGray;
                         worksheet.Cells[i, 2, i, maxCols].Style.Fill.BackgroundColor.SetColor(Color.Red);
                         worksheet.Cells[i, maxCols].Value = "V";                      

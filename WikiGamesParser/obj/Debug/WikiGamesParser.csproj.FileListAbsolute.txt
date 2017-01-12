@@ -10,3 +10,4 @@ c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParse
 c:\users\pc\documents\visual studio 2015\Projects\WikiGamesParser\WikiGamesParser\obj\Debug\WikiGamesParser.csproj.ResolveComReference.cache
 C:\Users\PC\Documents\Visual Studio 2015\Projects\WikiGamesParser\WikiGamesParser\bin\Debug\EPPlus.dll
 C:\Users\PC\Documents\Visual Studio 2015\Projects\WikiGamesParser\WikiGamesParser\bin\Debug\EPPlus.xml
+C:\Users\PC\Documents\Visual Studio 2015\Projects\WikiGamesParser\WikiGamesParser\obj\Debug\WikiGamesParser.csprojResolveAssemblyReference.cache

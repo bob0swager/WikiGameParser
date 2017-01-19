@@ -4,6 +4,9 @@ using System.Linq;
 using System.Net;
 using HtmlAgilityPack;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Drawing;
 
 namespace WikiGamesParser
 {
@@ -134,11 +137,11 @@ namespace WikiGamesParser
                 {
                     if (newNode.DocumentNode.SelectSingleNode("//tr//td//i//a") != null)
                     {
-                        foreach (HtmlNode gameLink in newNode.DocumentNode.SelectNodes("//tr//td//i//a").ToArray())
+                        Parallel.ForEach(newNode.DocumentNode.SelectNodes("//tr//td//i//a").ToArray(), (gameLink) =>
                         {
                             getCurrentPageCode(gameLink.Attributes["href"].Value, gameLink.InnerText, gameCount);
-                            
-                        }
+
+                        });
                     }
                 }
                 countTables++;
